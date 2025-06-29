@@ -3,12 +3,16 @@ const quoteDisplay = document.getElementById("quoteDisplay");
 const showQuoteBtn = document.getElementById("newQuote");
 
 // Load quotes from localStorage or use fallback
-let storedQuotes = localStorage.getItem("quotes");
-let quotes = storedQuotes ? JSON.parse(storedQuotes) : [
-  { text: "The best way to predict the future is to create it.", category: "Motivation" },
-  { text: "Simplicity is the ultimate sophistication.", category: "Design" },
-  { text: "JavaScript is the duct tape of the Internet.", category: "Programming" }
-];
+function loadQuotesFromStorage() {
+  const storedQuotes = localStorage.getItem("quotes");
+  return storedQuotes ? JSON.parse(storedQuotes) : [
+    { text: "The best way to predict the future is to create it.", category: "Motivation" },
+    { text: "Simplicity is the ultimate sophistication.", category: "Design" },
+    { text: "JavaScript is the duct tape of the Internet.", category: "Programming" }
+  ];
+}
+
+let quotes = loadQuotesFromStorage();
 
 // Save quotes to localStorage
 function saveQuotes() {
