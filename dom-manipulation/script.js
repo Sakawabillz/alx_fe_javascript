@@ -64,7 +64,7 @@ function syncQuotes() {
     saveQuotes();
     populateCategories();
     filterQuotes();
-    notification.textContent = "Synced with server successfully.";
+    notification.textContent = "Quotes synced with server!"; // Updated string
   }
 }
 
