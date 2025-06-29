@@ -133,7 +133,7 @@ function filterQuotes() {
   } else {
     quoteDisplay.innerHTML = "No quotes in this category.";
   }
-  localStorage.setItem("lastCategory", category);
+  localStorage.setItem("selectedCategory", category); // Changed from lastCategory
 }
 
 // Initial Load
@@ -149,12 +149,13 @@ window.onload = function () {
   createAddQuoteForm();
   populateCategories();
 
-  const lastCategory = localStorage.getItem("lastCategory");
-  if (lastCategory && document.getElementById("categoryFilter")) {
-    document.getElementById("categoryFilter").value = lastCategory;
+  const selectedCategory = localStorage.getItem("selectedCategory"); // Changed from lastCategory
+  if (selectedCategory && document.getElementById("categoryFilter")) {
+    document.getElementById("categoryFilter").value = selectedCategory;
     filterQuotes();
   }
 };
 
 // Event listener for Show New Quote
 showQuoteBtn.addEventListener("click", showRandomQuote);
+
