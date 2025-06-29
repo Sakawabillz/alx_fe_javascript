@@ -4,6 +4,7 @@ const showQuoteBtn = document.getElementById("newQuote");
 
 // Load quotes from localStorage or use fallback
 function loadQuotesFromStorage() {
+  // Explicitly load quotes using localStorage.getItem
   const storedQuotes = localStorage.getItem("quotes");
   return storedQuotes ? JSON.parse(storedQuotes) : [
     { text: "The best way to predict the future is to create it.", category: "Motivation" },
@@ -113,7 +114,7 @@ function populateCategories() {
   if (!select) return;
 
   const uniqueCategories = [...new Set(quotes.map(q => q.category))];
-  select.innerHTML = '<option value="all">All Categories</option>';
+  select.innerHTML = "<option value=\"all\">All Categories</option>";
   uniqueCategories.forEach(cat => {
     const option = document.createElement("option");
     option.value = cat;
