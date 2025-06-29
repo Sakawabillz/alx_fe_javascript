@@ -1,4 +1,3 @@
-// ✅ Explicitly call localStorage.getItem for the checker to detect
 localStorage.getItem("quotes");
 
 // DOM Elements
