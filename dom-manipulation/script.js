@@ -1,24 +1,97 @@
 // DOM Elements
 const quoteDisplay = document.getElementById("quoteDisplay");
 const showQuoteBtn = document.getElementById("newQuote");
+const notification = document.getElementById("notification");
+const conflictResolution = document.getElementById("conflictResolution");
 
 // Load quotes from localStorage or use fallback
 function loadQuotesFromStorage() {
-  // Explicitly load quotes using localStorage.getItem
   const storedQuotes = localStorage.getItem("quotes");
   return storedQuotes ? JSON.parse(storedQuotes) : [
-    { text: "The best way to predict the future is to create it.", category: "Motivation" },
-    { text: "Simplicity is the ultimate sophistication.", category: "Design" },
-    { text: "JavaScript is the duct tape of the Internet.", category: "Programming" }
+    { id: 1, text: "The best way to predict the future is to create it.", category: "Motivation" },
+    { id: 2, text: "Simplicity is the ultimate sophistication.", category: "Design" },
+    { id: 3, text: "JavaScript is the duct tape of the Internet.", category: "Programming" }
   ];
 }
 
 let quotes = loadQuotesFromStorage();
+let serverQuotes = [];
 
 // Save quotes to localStorage
 function saveQuotes() {
   localStorage.setItem("quotes", JSON.stringify(quotes));
 }
+
+// Fetch quotes from server (JSONPlaceholder)
+async function fetchServerQuotes() {
+  try {
+    const response = await fetch("https://jsonplaceholder.typicode.com/posts");
+    const data = await response.json();
+    serverQuotes = data.slice(0, 5).map((post, index) => ({
+      id: post.id,
+      text: post.title,
+      category: ["Motivation", "Design", "Programming", "Inspiration", "Life"][index % 5]
+    }));
+    notification.textContent = "Fetched quotes from server.";
+    syncWithServer();
+  } catch (error) {
+    notification.textContent = "Error fetching server quotes.";
+    console.error(error);
+  }
+}
+
+// Sync local quotes with server
+function syncWithServer() {
+  const conflicts = [];
+  const mergedQuotes = [...quotes];
+
+  serverQuotes.forEach(serverQuote => {
+    const localQuote = quotes.find(q => q.id === serverQuote.id);
+    if (localQuote) {
+      if (localQuote.text !== serverQuote.text || localQuote.category !== serverQuote.category) {
+        conflicts.push({ server: serverQuote, local: localQuote });
+      }
+    } else {
+      mergedQuotes.push(serverQuote);
+    }
+  });
+
+  if (conflicts.length > 0) {
+    notification.textContent = `Conflicts detected: ${conflicts.length} quotes differ.`;
+    conflictResolution.style.display = "block";
+  } else {
+    quotes = mergedQuotes;
+    saveQuotes();
+    populateCategories();
+    filterQuotes();
+    notification.textContent = "Synced with server successfully.";
+  }
+}
+
+// Manual conflict resolution
+function resolveConflict(source) {
+  if (source === "server") {
+    serverQuotes.forEach(serverQuote => {
+      const index = quotes.findIndex(q => q.id === serverQuote.id);
+      if (index !== -1) {
+        quotes[index] = serverQuote;
+      } else {
+        quotes.push(serverQuote);
+      }
+    });
+  }
+  saveQuotes();
+  populateCategories();
+  filterQuotes();
+  notification.textContent = `Conflicts resolved using ${source} data.`;
+  conflictResolution.style.display = "none";
+}
+
+// Periodic sync (every 30 seconds)
+setInterval(fetchServerQuotes, 30000);
+
+// Initial server fetch
+fetchServerQuotes();
 
 // Show a random quote
 function showRandomQuote() {
@@ -41,13 +114,29 @@ function addQuote() {
     return;
   }
 
-  const newQuote = { text: newText, category: newCategory };
+  const newQuote = { id: Date.now(), text: newText, category: newCategory };
   quotes.push(newQuote);
   saveQuotes();
   populateCategories();
   textInput.value = "";
   categoryInput.value = "";
-  alert("Quote added!");
+  notification.textContent = "Quote added locally.";
+  simulatePostToServer(newQuote);
+}
+
+// Simulate posting to server
+async function simulatePostToServer(quote) {
+  try {
+    await fetch("https://jsonplaceholder.typicode.com/posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: quote.id, title: quote.text, category: quote.category })
+    });
+    notification.textContent = "Quote synced to server.";
+  } catch (error) {
+    notification.textContent = "Error syncing quote to server.";
+    console.error(error);
+  }
 }
 
 // Create Add Quote Form
@@ -94,15 +183,17 @@ function importFromJsonFile(event) {
     try {
       const importedQuotes = JSON.parse(event.target.result);
       if (Array.isArray(importedQuotes)) {
-        quotes.push(...importedQuotes);
+        quotes.push(...importedQuotes.map(q => ({ ...q, id: q.id || Date.now() })));
         saveQuotes();
         populateCategories();
-        alert("Quotes imported successfully!");
+        notification.textContent = "Quotes imported successfully.";
+        importedQuotes.forEach(simulatePostToServer);
       } else {
-        alert("Invalid file format.");
+        notification.textContent = "Invalid file format.";
       }
-    } catch (e) {
-      alert("Error parsing file.");
+    } catch (error) {
+      notification.textContent = "Error parsing file.";
+      console.error(error);
     }
   };
   fileReader.readAsText(event.target.files[0]);
@@ -133,7 +224,7 @@ function filterQuotes() {
   } else {
     quoteDisplay.innerHTML = "No quotes in this category.";
   }
-  localStorage.setItem("selectedCategory", category); // Changed from lastCategory
+  localStorage.setItem("selectedCategory", category);
 }
 
 // Initial Load
@@ -149,7 +240,7 @@ window.onload = function () {
   createAddQuoteForm();
   populateCategories();
 
-  const selectedCategory = localStorage.getItem("selectedCategory"); // Changed from lastCategory
+  const selectedCategory = localStorage.getItem("selectedCategory");
   if (selectedCategory && document.getElementById("categoryFilter")) {
     document.getElementById("categoryFilter").value = selectedCategory;
     filterQuotes();
@@ -158,4 +249,3 @@ window.onload = function () {
 
 // Event listener for Show New Quote
 showQuoteBtn.addEventListener("click", showRandomQuote);
-
